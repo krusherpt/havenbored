@@ -1,46 +1,38 @@
-# Soundbored
+# Havenbored
+
 [![Coverage Status](https://coveralls.io/repos/github/christomitov/soundbored/badge.svg?branch=main)](https://coveralls.io/github/christomitov/soundbored?branch=main)
-[![Build Status](https://github.com/christomitov/soundbored/workflows/CI%2FCD%20Pipeline/badge.svg)](https://github.com/christomitov/soundbored/actions)
+[![Build Status](https://github.com/krusherpt/soundbored/workflows/CI%2FCD%20Pipeline/badge.svg)](https://github.com/krusherpt/soundbored/actions)
 
-Soundbored is an unlimited, no-cost, self-hosted havenbored for Discord. It allows you to play sounds in a voice channel.
-
+Havenbored is an unlimited, no-cost, self-hosted soundboard for [Haven](https://github.com/ancsemi/Haven). It allows you to play sounds in a Haven text channel via webhook API.
 
 [Hexdocs](https://christomitov.github.io/soundbored/)
 
-<img width="1468" alt="Screenshot 2025-01-18 at 1 26 07 PM" src="https://github.com/user-attachments/assets/4a504100-5ef9-47bc-b406-35b67837e116" />
-
-### CLI Companion
-Install the cross-platform CLI with `npm i -g soundbored` for quick automation. Source: [christomitov/soundbored-cli](https://github.com/christomitov/soundbored-cli).
+<img width="1468" alt="Screenshot 2025-01-18 at 1 26 07 PM" src="https://github.com/user-attachments/assets/4a504100-5ef9-47bc-b406-35b67837e116" />
 
 ## Quickstart
 
 1. Copy the sample environment and set the minimum values:
    ```bash
    cp .env.example .env
-   # Required for local testing
-   # DISCORD_TOKEN=...
-   # DISCORD_CLIENT_ID=...
-   # DISCORD_CLIENT_SECRET=...
-   # PHX_HOST=localhost
-   # SCHEME=http
+   # Required for Haven
+   HAVEN_SERVER_URL=https://haven.example.com
+   HAVEN_WEBHOOK_TOKEN=<your-64-char-hex-token>
+   HAVEN_CHANNEL_CODE=<your-8-char-hex-code>
+   # Optional: protect the browser UI
+   BASIC_AUTH_USERNAME=
+   BASIC_AUTH_PASSWORD=
+   PHX_HOST=localhost
+   SCHEME=http
    ```
+
 2. Run the published container:
    ```bash
    docker run -d -p 4000:4000 --env-file ./.env christom/soundbored
    ```
-3. Visit http://localhost:4000, invite the bot, and trigger your first sound.
 
-> Create the bot in the [Discord Developer Portal](https://discord.com/developers/applications), enable **Presence**, **Server Members**, and **Message Content** intents, and grant Send Messages, Read History, View Channels, Connect, and Speak permissions when you invite it.
+3. Visit http://localhost:4000, log in with your Haven credentials, and trigger your first sound.
 
-### Discord App Setup
-
-1. In the Discord Developer Portal, open your application and go to **Bot** → enable **Presence**, **Server Members**, and **Message Content** intents.
-2. Still in the portal, go to **OAuth2 → Redirects** and add every URL that will serve Soundbored to the **Redirects** list. For example:
-   - `http://localhost:4000/auth/discord/callback` (local development)
-   - `https://your.domain.com/auth/discord/callback` (production, replace with your domain)
-   Discord requires the redirect in your app configuration to match exactly what the browser uses during login; otherwise, OAuth will fail.
-3. Copy the **Client ID** and **Client Secret** from the same page—add them to your `.env` file as `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET`.
-4. Use **OAuth2 → URL Generator** (scope `bot`) to produce the invite link with the permissions listed above.
+> Create a webhook in Haven: go to **Settings → Server Admin Settings → Bots**, create a webhook, and copy the **Webhook Token** (64-char hex) and **Channel Code** (8-char hex).
 
 ## Local Development
 
@@ -61,40 +53,41 @@ All available keys live in `.env.example`. Configure the ones that match your se
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `DISCORD_TOKEN` | ✔ | Bot token used to play audio in voice channels. |
-| `EDA_DAVE` | optional | Override for Discord E2EE voice negotiation in EDA. Default is enabled; set `false` only for troubleshooting. |
-| `DISCORD_CLIENT_ID` / `DISCORD_CLIENT_SECRET` | ✔ | OAuth credentials for Discord login. |
+| `HAVEN_SERVER_URL` | ✔ | Your Haven server URL (e.g. `https://haven.example.com`) |
+| `HAVEN_WEBHOOK_TOKEN` | ✔ | 64-character hex webhook token from Haven |
+| `HAVEN_CHANNEL_CODE` | ✔ | 8-character hex channel code from Haven |
+| `HAVEN_REQUEST_TIMEOUT_MS` | optional | Request timeout in ms. Default: `10000` |
 | `BASIC_AUTH_USERNAME` / `BASIC_AUTH_PASSWORD` | optional | Protect the browser UI with HTTP basic auth. API routes stay behind API token auth. |
 | `SECRET_KEY_BASE` | ✔ | Signing/encryption secret; generate via `mix phx.gen.secret` or `openssl rand -base64 48`. Takes precedence over `SECRET_KEY_BASE_FILE`.|
 | `SECRET_KEY_BASE_FILE` | optional | Path to file containing signing/encryption secret (e.g. for docker secrets). Preferred for security. |
 | `PHX_HOST` | ✔ | Hostname the app advertises (`localhost` for local runs). |
 | `SCHEME` | ✔ | `http` locally, `https` in production. |
-| `AUTO_JOIN` | optional | Voice join mode. `play` (default) — bot joins when you play a sound. `presence` — bot follows users into channels. `false` — manual `!join` only. |
-| `VOICE_IDLE_TIMEOUT_SECONDS` | optional | Seconds of inactivity before the bot auto-leaves. Defaults to `600` (10 min). Set to `0` to disable. In `play` mode: timer resets per sound, bot also leaves when the last user departs. In `false` mode: timer starts after the last user leaves. In `presence` mode: ignored. |
-| `BIND_IP` | optional | IP address the HTTP server binds to. Defaults to `127.0.0.1`; set to `0.0.0.0` to bind all interfaces (e.g. Docker dev). |
 
 ## Deployment
 
 The application is published to Docker Hub as `christom/soundbored`.
 
 ### Simple Docker Host
+
 ```bash
 docker pull christom/soundbored:latest
 docker run -d -p 4000:4000 --env-file ./.env christom/soundbored
 ```
+
 If you place the container behind your own reverse proxy, set `PHX_HOST` and `SCHEME` in `.env` to match the external URL and terminate TLS in your proxy. No additional compose files are required.
 
 ## Usage
 
-After inviting the bot to your server, join a voice channel and type `!join` to have the bot join the voice channel. Type `!leave` to have the bot leave. You can upload sounds to Soundbored and trigger them there and they will play in the voice channel.
+After creating a webhook in Haven, log in to Havenbored with your Haven username and password. Upload sounds via the web UI or API and trigger them — they will play for all clients in the webhook's channel.
 
-The bot manages voice channels automatically in two ways:
+### Sound Playback
 
-The `AUTO_JOIN` variable controls three modes:
+Havenbored triggers sounds through Haven's webhook API. When you play a sound:
+1. Havenbored sends a `POST /api/webhooks/<token>/sounds` request to Haven
+2. Haven broadcasts a `play-sound` Socket.IO event to clients in the channel
+3. Haven's clients play the sound via their `<audio>` tags
 
-- **`play` (default)**: the bot joins automatically when you play a sound from the web UI or API. It leaves when the last user departs or after `VOICE_IDLE_TIMEOUT_SECONDS` seconds of no playback activity (default: 600 s / 10 min).
-- **`presence`**: the bot proactively follows users into voice channels on join events, and leaves immediately when the last user departs. The idle timeout is ignored in this mode.
-- **`false`**: fully manual — use `!join` / `!leave`. If `VOICE_IDLE_TIMEOUT_SECONDS` is set, the bot leaves automatically that many seconds after the last user departs.
+**Note:** Unlike Discord soundboards, Havenbored does not stream audio directly. Sounds are triggered via the webhook API and played client-side by Haven users.
 
 ## API
 
@@ -155,6 +148,27 @@ Errors use `%{error: message}` or `%{errors: changeset_errors}` depending on whe
 
 ## Changelog
 
+### v1.8.0 (2026-05-10)
+
+#### ✨ New Features
+- **Haven integration**: Migrated from Discord to [Haven](https://github.com/ancsemi/Haven) webhook API.
+- **Haven auth**: Login/register with Haven server credentials, including TOTP second-factor support.
+- **Webhook-based sound playback**: Sounds triggered via `POST /api/webhooks/<token>/sounds` — no local audio streaming needed.
+- **Haven WebhookClient**: Full HTTP client for Haven's webhook API (messages, sounds, commands).
+- **Haven AuthClient**: Client for Haven's auth API (login, register, TOTP validation, token verification).
+
+#### ⚙️ Breaking Changes
+- Removed all Discord/EDA dependencies (`:eda`, `:rustler`)
+- Replaced with `:finch` for HTTP requests
+- Removed Discord OAuth — now uses Haven username/password auth
+- Removed voice channel management, auto-join, idle timeout (Haven webhooks don't support voice events)
+- Changed app name from `:soundboard` to `:havenbored`
+
+#### 🧪 Tests & Quality
+- Added tests for Haven webhook client, channel binding, and handler
+- Updated all existing tests for new auth flow
+- Cleaned up Discord-specific test files
+
 ### v1.7.0 (2026-03-07)
 
 #### ✨ New Features
@@ -177,8 +191,8 @@ Errors use `%{error: message}` or `%{errors: changeset_errors}` depending on whe
 
 #### ✨ New Features
 - New consolidated `Settings` view replaces the standalone API tokens screen and keeps token creation, revocation, and inline API examples in one place.
-- Stats dashboard adds a week picker, richer recent activity stream, and refreshed layout under the new name “Stats”.
-- “Play Random” now respects whatever filters are active, pulling from the current search results or selected tags only.
+- Stats dashboard adds a week picker, richer recent activity stream, and refreshed layout under the new name "Stats".
+- "Play Random" now respects whatever filters are active, pulling from the current search results or selected tags only.
 
 #### ⚙️ Improvements
 - Shared tag components and modal tweaks streamline sound management and reduce layout shifts.
@@ -197,14 +211,14 @@ Errors use `%{error: message}` or `%{errors: changeset_errors}` depending on whe
 
 #### ✨ New Features
 - User-scoped API tokens with DB storage (generate/revoke in Settings > API Tokens).
-- API requests authenticated via `Authorization: Bearer <token>` are attributed to the token’s user and increment stats accordingly.
+- API requests authenticated via `Authorization: Bearer <token>` are attributed to the token's user and increment stats accordingly.
 - In-app API help with copy-to-clipboard curl commands that auto-fill your site URL and token.
 - Added Settings link in the navbar for quick access.
 - Released a new CLI for easier local and CI integrations.
 
 #### ⚙️ Improvements
 - Search bar: reduced debounce to 200ms and added inline spinner while searching.
-- Recent Plays: fixed item “disappearing” by using stable DB ids and deterministic ordering; clicked items now bump to the top correctly.
+- Recent Plays: fixed item "disappearing" by using stable DB ids and deterministic ordering; clicked items now bump to the top correctly.
 
 #### 🧪 Tests & Quality
 - Added tests for API token lifecycle, API auth with DB tokens, Basic Auth, and the Settings LiveView.

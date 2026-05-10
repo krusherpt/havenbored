@@ -1,7 +1,7 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- Source: `lib/soundboard` (core), `lib/soundboard_web` (Phoenix web, LiveView, controllers, components).
+- Source: `lib/havenbored` (core), `lib/havenbored_web` (Phoenix web, LiveView, controllers, components).
 - Frontend assets: `assets/js`, `assets/css`, `assets/tailwind.config.js`.
 - Config and priv: `config/`, `priv/` (static, migrations, etc.).
 - Tests: `test/` mirroring lib; helpers in `test/support`.
@@ -17,14 +17,14 @@
 
 ## Coding Style & Naming Conventions
 - Elixir style: 2‑space indent; run `mix format` before committing.
-- Modules: `Soundboard.*` and `SoundboardWeb.*`; filenames snake_case.
+- Modules: `Havenbored.*` and `HavenboredWeb.*`; filenames snake_case.
 - Functions/vars: snake_case; constants via module attributes.
-- Components/LiveViews live under `lib/soundboard_web/{components,live}` with descriptive names (e.g., `favorites_live.ex`).
+- Components/LiveViews live under `lib/havenbored_web/{components,live}` with descriptive names (e.g., `favorites_live.ex`).
 
 ## Testing Guidelines
 - Framework: ExUnit with helpers in `test/support` (`ConnCase`, `DataCase`).
 - Naming: mirror module under `test/…/*_test.exs` (e.g., `stats_test.exs`).
-- Run selective: `mix test test/soundboard/stats_test.exs:42`.
+- Run selective: `mix test test/havenbored/stats_test.exs:42`.
 - Coverage: aim >90% for new code; add unit tests for contexts and LiveView interaction where feasible.
 
 ## Commit & Pull Request Guidelines
@@ -33,6 +33,6 @@
 - Checks: run `mix precommit` before pushing; it covers compile warnings, unused deps, formatting, Credo, tests, and clone detection.
 
 ## Security & Configuration Tips
-- Secrets via `.env` (see `.env.example`): Discord tokens, API token, `PHX_HOST`, `SCHEME`.
+- Secrets via `.env` (see `.env.example`): Haven server URL, webhook token, API token, `PHX_HOST`, `SCHEME`.
 - Do not commit real secrets; prefer Docker env files in development and deployment.
 - For production, keep secrets in `.env` and run the single compose stack; integrate your own reverse proxy/load balancer as needed.
