@@ -12,13 +12,7 @@ import Config
 #   generators: [timestamp_type: :utc_datetime],
 #   token: System.get_env("DISCORD_TOKEN")
 
-# EDA config shared across environments.
-# Prefix commands like `!join` require :message_content intent.
-config :eda,
-  intents: [:guilds, :guild_messages, :guild_voice_states, :message_content],
-  consumer: Soundboard.Discord.Consumer,
-  gateway_encoding: :etf,
-  dave: true
+ # EDA/Discord removed — migrated to Haven webhook API.
 
 # Configures the endpoint
 config :soundboard, SoundboardWeb.Endpoint,
@@ -82,13 +76,12 @@ config :phoenix_live_view,
 
 config :soundboard, SoundboardWeb.Presence, pubsub_server: Soundboard.PubSub
 
-# Optional voice startup probe (disabled by default)
-config :soundboard,
-  voice_rtp_probe: false,
-  voice_rtp_probe_timeout_ms: 6_000
 
-# Add this with your other configs
-config :ueberauth, Ueberauth,
-  providers: [
-    discord: {Ueberauth.Strategy.Discord, [default_scope: "identify"]}
-  ]
+
+ # Ueberauth/Discord OAuth removed — migrated to simple token auth.
+ # Haven auth configuration
+ config :soundboard,
+   haven_server_url: System.get_env("HAVEN_SERVER_URL", ""),
+   haven_webhook_token: System.get_env("HAVEN_WEBHOOK_TOKEN", ""),
+   haven_channel_code: System.get_env("HAVEN_CHANNEL_CODE", ""),
+   haven_request_timeout_ms: System.get_env("HAVEN_REQUEST_TIMEOUT_MS", "10000") |> String.to_integer()

@@ -4,7 +4,6 @@ defmodule Soundboard.Application do
   @moduledoc false
 
   use Application
-  alias Soundboard.Discord.RuntimeCapability
   require Logger
 
   @impl true
@@ -18,22 +17,13 @@ defmodule Soundboard.Application do
       {Phoenix.PubSub, name: Soundboard.PubSub},
       SoundboardWeb.Presence,
       SoundboardWeb.PresenceHandler,
-      Soundboard.Discord.Handler.State,
-      SoundboardWeb.Endpoint
-      | discord_children()
+      Soundboard.Haven.Handler.State,
+      SoundboardWeb.Endpoint,
+      Soundboard.Haven.Handler
     ]
 
     opts = [strategy: :one_for_one, name: Soundboard.Supervisor]
     Supervisor.start_link(children, opts)
-  end
-
-  defp discord_children do
-    if RuntimeCapability.discord_handler_enabled?() do
-      [Soundboard.Discord.Handler]
-    else
-      RuntimeCapability.log_degraded_mode()
-      []
-    end
   end
 
   # Tell Phoenix to update the endpoint configuration

@@ -10,12 +10,8 @@ defmodule SoundboardWeb.Router do
     plug :put_secure_browser_headers
   end
 
-  pipeline :require_browser_basic_auth do
+  pipeline :require_basic_auth do
     plug SoundboardWeb.Plugs.BasicAuth
-  end
-
-  pipeline :require_role_check do
-    plug SoundboardWeb.Plugs.RoleCheck
   end
 
   pipeline :auth do
@@ -23,36 +19,29 @@ defmodule SoundboardWeb.Router do
     plug :fetch_current_user
   end
 
-  pipeline :auth_browser do
-    plug :accepts, ["html"]
-    plug :fetch_session
-    plug :protect_from_forgery
-    plug :put_secure_browser_headers
-    plug :put_session_opts
-  end
-
   pipeline :api do
     plug :accepts, ["json"]
     plug SoundboardWeb.Plugs.APIAuth
   end
 
-  # Discord OAuth routes - must come before protected routes
+  # Auth routes (login/register/TOTP)
   scope "/auth", SoundboardWeb do
     pipe_through [:browser]
 
-    get "/:provider", AuthController, :request
-    get "/:provider/callback", AuthController, :callback
+    get "/login", AuthController, :login
+     get "/totp", AuthController, :totp
+    post "/login", AuthController, :login_post
+     post "/totp", AuthController, :totp_post
     delete "/logout", AuthController, :logout
   end
 
-  # Protected routes
+  # Protected routes (require Basic Auth + session)
   scope "/", SoundboardWeb do
     pipe_through [
       :browser,
+      :require_basic_auth,
       :auth,
-      :ensure_authenticated_user,
-      :require_role_check,
-      :require_browser_basic_auth
+      :ensure_authenticated_user
     ]
 
     live "/", SoundboardLive
@@ -64,10 +53,9 @@ defmodule SoundboardWeb.Router do
   scope "/uploads" do
     pipe_through [
       :browser,
+      :require_basic_auth,
       :auth,
-      :ensure_authenticated_user,
-      :require_role_check,
-      :require_browser_basic_auth
+      :ensure_authenticated_user
     ]
 
     get "/*path", SoundboardWeb.UploadController, :show
@@ -81,7 +69,7 @@ defmodule SoundboardWeb.Router do
     end
   end
 
-  # Add this new scope for API routes before your other scopes
+  # API routes (require API token)
   scope "/api", SoundboardWeb.API do
     pipe_through :api
 
@@ -91,19 +79,14 @@ defmodule SoundboardWeb.Router do
     post "/sounds/stop", SoundController, :stop
   end
 
+  ## Session helpers
+
   def fetch_current_user(conn, _) do
-    user_id = get_session(conn, :user_id)
+    user_id = get_session(conn, :haven_user_id)
 
     if user_id do
-      case Soundboard.Accounts.get_user(user_id) do
-        nil ->
-          conn
-          |> clear_session()
-          |> assign(:current_user, nil)
-
-        user ->
-          assign(conn, :current_user, user)
-      end
+      conn
+      |> assign(:current_user, %{id: user_id, username: get_session(conn, :haven_username)})
     else
       assign(conn, :current_user, nil)
     end
@@ -115,19 +98,8 @@ defmodule SoundboardWeb.Router do
     else
       conn
       |> put_session(:return_to, conn.request_path)
-      |> redirect(to: "/auth/discord")
+      |> redirect(to: "/auth/login")
       |> halt()
     end
-  end
-
-  defp put_session_opts(conn, _opts) do
-    conn
-    |> put_resp_cookie("_soundboard_key", "",
-      max_age: 86_400 * 30,
-      same_site: "Lax",
-      secure: Application.get_env(:soundboard, :env) == :prod,
-      http_only: true,
-      path: "/"
-    )
   end
 end

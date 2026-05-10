@@ -65,7 +65,9 @@ config :soundboard, Soundboard.PubSub,
   adapter: Phoenix.PubSub.PG2,
   name: Soundboard.PubSub
 
-config :eda,
-  token: nil,
-  consumer: nil,
-  dave: false
+ # EDA/Discord removed — migrated to Haven webhook API.
+ config :soundboard,
+   haven_server_url: "http://localhost:9999",
+   haven_webhook_token: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+   haven_channel_code: "a1b2c3d4",
+   haven_request_timeout_ms: 5000

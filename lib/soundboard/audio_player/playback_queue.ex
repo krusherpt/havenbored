@@ -3,27 +3,22 @@ defmodule Soundboard.AudioPlayer.PlaybackQueue do
 
   require Logger
 
-  alias Soundboard.AudioPlayer.{PlaybackEngine, SoundLibrary, State}
-  alias Soundboard.Discord.Voice
+  alias Soundboard.AudioPlayer.{Notifier, SoundLibrary, State}
+  alias Soundboard.Haven.WebhookClient
 
   @type play_request :: %{
-          guild_id: String.t(),
-          channel_id: String.t(),
           sound_name: String.t(),
           path_or_url: String.t(),
           volume: number(),
           actor: term()
         }
 
-  @spec build_request({String.t(), String.t()}, String.t(), term()) ::
-          {:ok, play_request()} | {:error, String.t()}
-  def build_request({guild_id, channel_id}, sound_name, actor) do
+  @spec build_request(String.t(), term()) :: {:ok, play_request()} | {:error, String.t()}
+  def build_request(sound_name, actor) do
     case SoundLibrary.get_sound_path(sound_name) do
       {:ok, {path_or_url, volume}} ->
         {:ok,
          %{
-           guild_id: guild_id,
-           channel_id: channel_id,
            sound_name: sound_name,
            path_or_url: path_or_url,
            volume: volume,
@@ -35,8 +30,8 @@ defmodule Soundboard.AudioPlayer.PlaybackQueue do
     end
   end
 
-  @spec enqueue(State.t(), play_request(), pos_integer()) :: State.t()
-  def enqueue(%State{} = state, request, interrupt_watchdog_ms) do
+  @spec enqueue(State.t(), play_request()) :: State.t()
+  def enqueue(%State{} = state, request) do
     case state.current_playback do
       nil ->
         state
@@ -47,7 +42,7 @@ defmodule Soundboard.AudioPlayer.PlaybackQueue do
       _ ->
         state
         |> Map.put(:pending_request, request)
-        |> maybe_interrupt_current(interrupt_watchdog_ms)
+        |> maybe_interrupt_current()
     end
   end
 
@@ -91,7 +86,6 @@ defmodule Soundboard.AudioPlayer.PlaybackQueue do
 
   @spec handle_interrupt_watchdog(
           State.t(),
-          String.t(),
           non_neg_integer(),
           pos_integer(),
           pos_integer()
@@ -99,7 +93,6 @@ defmodule Soundboard.AudioPlayer.PlaybackQueue do
           State.t()
   def handle_interrupt_watchdog(
         %State{interrupting: true, interrupt_watchdog_attempt: attempt} = state,
-        guild_id,
         attempt,
         max_attempts,
         interrupt_watchdog_ms
@@ -109,59 +102,23 @@ defmodule Soundboard.AudioPlayer.PlaybackQueue do
         state |> reset_interrupt_state() |> maybe_start_pending()
 
       attempt >= max_attempts ->
-        Logger.warning(
-          "Interrupt watchdog timed out for guild #{guild_id}; forcing latest request"
-        )
+        Logger.warning("Interrupt watchdog timed out; forcing latest request")
 
-        Voice.stop(guild_id)
         state |> clear_current_playback() |> maybe_start_pending()
-
-      match?({:ok, true}, safe_voice_playing(guild_id)) ->
-        Logger.debug(
-          "Interrupt watchdog: audio still playing in guild #{guild_id}, retrying stop"
-        )
-
-        Voice.stop(guild_id)
-        schedule_interrupt_watchdog(state, guild_id, attempt + 1, interrupt_watchdog_ms)
 
       true ->
-        Logger.debug("Interrupt watchdog: playback already stopped for guild #{guild_id}")
-        state |> clear_current_playback() |> maybe_start_pending()
+        Logger.debug("Interrupt watchdog: retrying stop")
+        schedule_interrupt_watchdog(state, attempt + 1, interrupt_watchdog_ms)
     end
   end
 
-  def handle_interrupt_watchdog(%State{} = state, _guild_id, _attempt, _max_attempts, _delay_ms),
+  def handle_interrupt_watchdog(%State{} = state, _attempt, _max_attempts, _delay_ms),
     do: state
-
-  @spec handle_playback_finished(State.t(), String.t()) :: State.t()
-  def handle_playback_finished(%State{} = state, guild_id) do
-    cond do
-      match?(%{guild_id: ^guild_id}, state.current_playback) ->
-        state
-        |> clear_current_playback()
-        |> maybe_start_pending()
-
-      state.interrupting and match?({^guild_id, _}, state.voice_channel) ->
-        state
-        |> reset_interrupt_state()
-        |> maybe_start_pending()
-
-      true ->
-        state
-    end
-  end
 
   defp start_playback(state, request) do
     task =
       Task.async(fn ->
-        PlaybackEngine.play(
-          request.guild_id,
-          request.channel_id,
-          request.sound_name,
-          request.path_or_url,
-          request.volume,
-          request.actor
-        )
+        play_sound_haven(request.sound_name, request.actor)
       end)
 
     %{
@@ -170,40 +127,35 @@ defmodule Soundboard.AudioPlayer.PlaybackQueue do
     }
   end
 
-  defp maybe_interrupt_current(%State{current_playback: %{guild_id: guild_id}} = state, delay_ms) do
-    Logger.debug("Interrupting current playback in guild #{guild_id} for latest request")
-    Voice.stop(guild_id)
+   defp play_sound_haven(sound_name, _actor) do
+     webhook_token = Application.fetch_env!(:soundboard, :haven_webhook_token)
+     case WebhookClient.play_sound(webhook_token, sound_name) do
+       :ok -> :ok
+       {:error, reason} -> {:error, reason}
+     end
+   rescue
+     error -> {:error, Exception.message(error)}
+   catch
+     :exit, reason -> {:error, reason}
+   end
 
-    if match?({:ok, true}, safe_voice_playing(guild_id)) do
-      state
-      |> Map.put(:interrupting, true)
-      |> schedule_interrupt_watchdog(guild_id, 1, delay_ms)
-    else
-      Logger.debug("Interrupt fast-path: playback stopped immediately in guild #{guild_id}")
+  defp maybe_interrupt_current(%State{current_playback: current} = state) when not is_nil(current) do
+    Logger.debug("Interrupting current playback for latest request")
 
-      state
-      |> clear_current_playback()
-      |> maybe_start_pending()
-    end
+    state
+    |> Map.put(:interrupting, true)
+    |> schedule_interrupt_watchdog(1, @interrupt_watchdog_ms)
   end
 
-  defp maybe_interrupt_current(%State{} = state, _delay_ms), do: state
+  defp maybe_interrupt_current(%State{} = state), do: state
 
   defp maybe_start_pending(%State{pending_request: nil} = state), do: state
 
   defp maybe_start_pending(%State{} = state) do
     request = state.pending_request
-
-    case state.voice_channel do
-      {guild_id, channel_id}
-      when guild_id == request.guild_id and channel_id == request.channel_id ->
-        state
-        |> Map.put(:pending_request, nil)
-        |> start_playback(request)
-
-      _ ->
-        %{state | pending_request: nil}
-    end
+    state
+    |> Map.put(:pending_request, nil)
+    |> start_playback(request)
   end
 
   defp clear_current_playback(%State{} = state) do
@@ -224,10 +176,10 @@ defmodule Soundboard.AudioPlayer.PlaybackQueue do
     |> Map.merge(%{interrupting: false, interrupt_watchdog_attempt: 0})
   end
 
-  defp schedule_interrupt_watchdog(%State{} = state, guild_id, attempt, delay_ms) do
+  defp schedule_interrupt_watchdog(%State{} = state, attempt, delay_ms) do
     state = cancel_interrupt_watchdog(state)
 
-    ref = Process.send_after(self(), {:interrupt_watchdog, guild_id, attempt}, delay_ms)
+    ref = Process.send_after(self(), {:interrupt_watchdog, attempt}, delay_ms)
 
     %{state | interrupt_watchdog_ref: ref, interrupt_watchdog_attempt: attempt}
   end
@@ -252,10 +204,4 @@ defmodule Soundboard.AudioPlayer.PlaybackQueue do
   end
 
   defp cancel_playback_task(_), do: :ok
-
-  defp safe_voice_playing(guild_id) do
-    {:ok, Voice.playing?(guild_id)}
-  rescue
-    error -> {:error, {:voice_playing_unavailable, Exception.message(error)}}
-  end
 end

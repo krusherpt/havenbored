@@ -299,8 +299,8 @@ defmodule SoundboardWeb.SoundboardLive do
   def handle_event("stop_sound", _params, socket) do
     # Stop browser-based sounds
     socket = push_event(socket, "stop-all-sounds", %{})
+    # Stop Haven webhook sounds if user is logged in
 
-    # Stop Discord bot sounds if user is logged in
     if socket.assigns.current_user do
       Soundboard.AudioPlayer.stop_sound()
     end
