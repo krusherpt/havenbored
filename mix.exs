@@ -1,4 +1,4 @@
-defmodule Soundboard.MixProject do
+ defmodule Havenbored.MixProject do
   use Mix.Project
 
   @moduledoc """
@@ -9,7 +9,7 @@ defmodule Soundboard.MixProject do
 
   def project do
     [
-      app: :soundboard,
+      app: :havenbored,
       version: "1.7.0",
       elixir: "~> 1.19",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -20,28 +20,28 @@ defmodule Soundboard.MixProject do
       test_coverage: [
         tool: ExCoveralls,
         ignore_modules: [
-          SoundboardWeb.CoreComponents,
-          SoundboardWeb.Components.FlashComponent,
-          SoundboardWeb.Components.Layouts,
-          SoundboardWeb.Router,
-          SoundboardWeb.Telemetry,
-          SoundboardWeb.Endpoint,
-          SoundboardWeb.Gettext,
+          HavenboredWeb.CoreComponents,
+          HavenboredWeb.Components.FlashComponent,
+          HavenboredWeb.Components.Layouts,
+          HavenboredWeb.Router,
+          HavenboredWeb.Telemetry,
+          HavenboredWeb.Endpoint,
+          HavenboredWeb.Gettext,
           # Controllers and views with no meaningful coverage needs
-          SoundboardWeb.ErrorHTML,
-          SoundboardWeb.ErrorJSON,
-          SoundboardWeb.PageController,
-          SoundboardWeb.PageHTML,
-          SoundboardWeb.UploadController,
+          HavenboredWeb.ErrorHTML,
+          HavenboredWeb.ErrorJSON,
+          HavenboredWeb.PageController,
+          HavenboredWeb.PageHTML,
+          HavenboredWeb.UploadController,
           # Live views that might need separate testing strategy
-          SoundboardWeb.PresenceLive,
-          SoundboardWeb.Presence,
+          HavenboredWeb.PresenceLive,
+          HavenboredWeb.Presence,
           # Repo and application modules
-          Soundboard.Repo,
+          Havenbored.Repo,
           # Test support files
-          SoundboardWeb.ConnCase,
-          Soundboard.DataCase,
-          Soundboard.TestHelpers
+          HavenboredWeb.ConnCase,
+          Havenbored.DataCase,
+          Havenbored.TestHelpers
         ]
       ]
     ]

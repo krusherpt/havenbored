@@ -26,7 +26,7 @@ source!([
 # Alternatively, you can use `mix phx.gen.release` to generate a `bin/server`
 # script that automatically sets the env var above.
 if env!("PHX_SERVER", :boolean, false) do
-  config :soundboard, SoundboardWeb.Endpoint, server: true
+  config :havenbored, SoundboardWeb.Endpoint, server: true
 end
 
  if config_env() == :dev do
@@ -67,7 +67,7 @@ end
        endpoint_overrides
      end
  
-   config :soundboard, SoundboardWeb.Endpoint, endpoint_overrides
+   config :havenbored, SoundboardWeb.Endpoint, endpoint_overrides
  
    # Configure Haven
    haven_server_url = env!("HAVEN_SERVER_URL", :string, nil)
@@ -81,7 +81,7 @@ end
      )
    end
  
-   config :soundboard,
+   config :havenbored,
      haven_server_url: haven_server_url,
      haven_webhook_token: haven_webhook_token,
      haven_channel_code: haven_channel_code,
@@ -93,9 +93,9 @@ end
    port = env!("PORT", :integer, 4000)
  
    # Replace the database_url section with SQLite configuration
-   database_path = Path.join(:code.priv_dir(:soundboard), "static/uploads/soundboard_prod.db")
+   database_path = Path.join(:code.priv_dir(:havenbored), "static/uploads/soundboard_prod.db")
  
-   config :soundboard, Soundboard.Repo,
+   config :havenbored, Soundboard.Repo,
      database: database_path,
      adapter: Ecto.Adapters.SQLite3,
      pool_size: env!("POOL_SIZE", :integer, 10)
@@ -132,7 +132,7 @@ end
    scheme = env!("SCHEME", :string!, "https")
  
    # Configure endpoint
-   config :soundboard, SoundboardWeb.Endpoint,
+   config :havenbored, SoundboardWeb.Endpoint,
      url: [
        scheme: scheme,
        host: host,
@@ -161,7 +161,7 @@ end
    haven_channel_code = env!("HAVEN_CHANNEL_CODE", :string!)
    haven_request_timeout_ms = env!("HAVEN_REQUEST_TIMEOUT_MS", :integer, 10_000)
  
-   config :soundboard,
+   config :havenbored,
      haven_server_url: haven_server_url,
      haven_webhook_token: haven_webhook_token,
      haven_channel_code: haven_channel_code,
@@ -184,5 +184,5 @@ end
      stacktrace_depth: 20,
      plug_init_mode: :runtime
  
-   config :soundboard, :env, :prod
+   config :havenbored, :env, :prod
  end

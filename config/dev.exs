@@ -1,6 +1,6 @@
 import Config
 
-config :soundboard, Soundboard.Repo,
+config :havenbored, Soundboard.Repo,
   database: "database.db",
   adapter: Ecto.Adapters.SQLite3
 
@@ -25,7 +25,7 @@ secret_key_base =
       generate_secret_key_base.()
   end
 
-config :soundboard, SoundboardWeb.Endpoint,
+config :havenbored, SoundboardWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4000],
   url: [host: "localhost", port: 4000, scheme: "http"],
   check_origin: false,
@@ -33,11 +33,11 @@ config :soundboard, SoundboardWeb.Endpoint,
   debug_errors: true,
   secret_key_base: secret_key_base,
   watchers: [
-    esbuild: {Esbuild, :install_and_run, [:soundboard, ~w(--sourcemap=inline --watch)]},
-    tailwind: {Tailwind, :install_and_run, [:soundboard, ~w(--watch)]}
+    esbuild: {Esbuild, :install_and_run, [:havenbored, ~w(--sourcemap=inline --watch)]},
+    tailwind: {Tailwind, :install_and_run, [:havenbored, ~w(--watch)]}
   ]
 
-config :soundboard, SoundboardWeb.Endpoint,
+config :havenbored, SoundboardWeb.Endpoint,
   live_reload: [
     patterns: [
       ~r"priv/static/(?!uploads/).*(js|css|png|jpeg|jpg|gif|svg)$",
@@ -46,7 +46,7 @@ config :soundboard, SoundboardWeb.Endpoint,
     ]
   ]
 
-config :soundboard, dev_routes: true
+config :havenbored, dev_routes: true
 config :logger, :console, format: "[$level] $message\n"
 config :phoenix, :stacktrace_depth, 20
 config :phoenix, :plug_init_mode, :runtime
@@ -56,4 +56,4 @@ config :phoenix_live_view,
   enable_expensive_runtime_checks: true
 
 config :swoosh, :api_client, false
-config :soundboard, env: :dev
+config :havenbored, env: :dev

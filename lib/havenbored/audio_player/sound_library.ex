@@ -1,0 +1,104 @@
+defmodule Havenbored.AudioPlayer.SoundLibrary do
+  @moduledoc false
+
+  require Logger
+
+  alias Havenbored.Sound
+
+  def ensure_cache do
+    case :ets.info(:sound_meta_cache) do
+      :undefined ->
+        :ets.new(:sound_meta_cache, [:set, :named_table, :public, read_concurrency: true])
+        :ok
+
+      _ ->
+        :ok
+    end
+  end
+
+  def get_sound_path(sound_name) do
+    ensure_cache()
+
+    case lookup_cached_sound(sound_name) do
+      {:hit, {_type, input, volume}} -> {:ok, {input, volume}}
+      :miss -> resolve_and_cache_sound(sound_name)
+    end
+  end
+
+  def prepare_play_input(sound_name, path_or_url) do
+    ensure_cache()
+
+    case :ets.lookup(:sound_meta_cache, sound_name) do
+      [{^sound_name, %{source_type: source_type}}] when source_type in ["url", "local"] ->
+        {path_or_url, :url}
+
+      _ ->
+        case Havenbored.Repo.get_by(Sound, filename: sound_name) do
+          %{source_type: source_type} when source_type in ["url", "local"] ->
+            {path_or_url, :url}
+
+          _ ->
+            Logger.warning("Unknown source type for #{sound_name}; defaulting to direct playback")
+            {path_or_url, :url}
+        end
+    end
+  end
+
+  @doc """
+  Removes any cached metadata for the given `sound_name` so future plays use fresh data.
+  """
+  def invalidate_cache(sound_name) when is_binary(sound_name) do
+    ensure_cache()
+    :ets.delete(:sound_meta_cache, sound_name)
+    :ok
+  end
+
+  def invalidate_cache(_), do: :ok
+
+  defp lookup_cached_sound(sound_name) do
+    case :ets.lookup(:sound_meta_cache, sound_name) do
+      [{^sound_name, %{source_type: source, input: input, volume: volume}}] ->
+        {:hit, {source, input, volume}}
+
+      _ ->
+        :miss
+    end
+  end
+
+  defp resolve_and_cache_sound(sound_name) do
+    case Havenbored.Repo.get_by(Sound, filename: sound_name) do
+      nil ->
+        Logger.error("Sound not found in database: #{sound_name}")
+        {:error, "Sound not found"}
+
+      %{source_type: "url", url: url, volume: volume} when is_binary(url) ->
+        meta = %{source_type: "url", input: url, volume: volume || 1.0}
+        cache_sound(sound_name, meta)
+        {:ok, {meta.input, meta.volume}}
+
+      %{source_type: "local", filename: filename, volume: volume} when is_binary(filename) ->
+        path = resolve_upload_path(filename)
+
+        if File.exists?(path) do
+          meta = %{source_type: "local", input: path, volume: volume || 1.0}
+          cache_sound(sound_name, meta)
+          {:ok, {meta.input, meta.volume}}
+        else
+          Logger.error("Local file not found: #{path}")
+          {:error, "Sound file not found at #{path}"}
+        end
+
+      _sound ->
+        Logger.error("Invalid sound configuration for #{sound_name}")
+        {:error, "Invalid sound configuration"}
+    end
+  end
+
+  defp resolve_upload_path(filename) do
+    Havenbored.UploadsPath.file_path(filename)
+  end
+
+  defp cache_sound(sound_name, meta) do
+    :ets.insert(:sound_meta_cache, {sound_name, meta})
+  end
+end

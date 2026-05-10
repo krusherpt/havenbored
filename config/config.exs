@@ -7,7 +7,7 @@
 # General application configuration
 import Config
 
-# config :soundboard,
+# config :havenbored,
 #   ecto_repos: [Soundboard.Repo],
 #   generators: [timestamp_type: :utc_datetime],
 #   token: System.get_env("DISCORD_TOKEN")
@@ -15,7 +15,7 @@ import Config
  # EDA/Discord removed — migrated to Haven webhook API.
 
 # Configures the endpoint
-config :soundboard, SoundboardWeb.Endpoint,
+config :havenbored, SoundboardWeb.Endpoint,
   url: [host: "localhost", port: 4000],
   adapter: Bandit.PhoenixAdapter,
   render_errors: [
@@ -63,24 +63,24 @@ config :mime, :types, %{
 import_config "#{config_env()}.exs"
 
 # Add this near the top of the file
-config :soundboard,
+config :havenbored,
   ecto_repos: [Soundboard.Repo]
 
 # Add this somewhere in the file
-config :soundboard, Soundboard.Repo,
+config :havenbored, Soundboard.Repo,
   database: "priv/static/uploads/database.db",
   pool_size: 5
 
 config :phoenix_live_view,
   flash_timeout: 3000
 
-config :soundboard, SoundboardWeb.Presence, pubsub_server: Soundboard.PubSub
+config :havenbored, SoundboardWeb.Presence, pubsub_server: Soundboard.PubSub
 
 
 
  # Ueberauth/Discord OAuth removed — migrated to simple token auth.
  # Haven auth configuration
- config :soundboard,
+ config :havenbored,
    haven_server_url: System.get_env("HAVEN_SERVER_URL", ""),
    haven_webhook_token: System.get_env("HAVEN_WEBHOOK_TOKEN", ""),
    haven_channel_code: System.get_env("HAVEN_CHANNEL_CODE", ""),

@@ -5,7 +5,7 @@ import Config
 # The MIX_TEST_PARTITION environment variable can be used
 # to provide built-in test partitioning in CI environment.
 # Run `mix help test` for more information.
-config :soundboard, Soundboard.Repo,
+config :havenbored, Soundboard.Repo,
   adapter: Ecto.Adapters.SQLite3,
   database: Path.expand("../soundboard_test.db", Path.dirname(__ENV__.file)),
   pool: Ecto.Adapters.SQL.Sandbox,
@@ -36,7 +36,7 @@ secret_key_base =
       generate_secret_key_base.()
   end
 
-config :soundboard, SoundboardWeb.Endpoint,
+config :havenbored, SoundboardWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
   secret_key_base: secret_key_base,
   server: false
@@ -55,18 +55,18 @@ config :phoenix, :plug_init_mode, :runtime
 config :phoenix_live_view,
   enable_expensive_runtime_checks: true
 
-config :soundboard, :sql_sandbox, true
+config :havenbored, :sql_sandbox, true
 
-config :soundboard, env: :test
+config :havenbored, env: :test
 
-config :soundboard, Soundboard.AudioPlayer, voice_maintenance_enabled: false
+config :havenbored, Soundboard.AudioPlayer, voice_maintenance_enabled: false
 
-config :soundboard, Soundboard.PubSub,
+config :havenbored, Soundboard.PubSub,
   adapter: Phoenix.PubSub.PG2,
   name: Soundboard.PubSub
 
  # EDA/Discord removed — migrated to Haven webhook API.
- config :soundboard,
+ config :havenbored,
    haven_server_url: "http://localhost:9999",
    haven_webhook_token: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
    haven_channel_code: "a1b2c3d4",

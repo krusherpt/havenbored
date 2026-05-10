@@ -2,7 +2,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/christomitov/soundbored/badge.svg?branch=main)](https://coveralls.io/github/christomitov/soundbored?branch=main)
 [![Build Status](https://github.com/christomitov/soundbored/workflows/CI%2FCD%20Pipeline/badge.svg)](https://github.com/christomitov/soundbored/actions)
 
-Soundbored is an unlimited, no-cost, self-hosted soundboard for Discord. It allows you to play sounds in a voice channel.
+Soundbored is an unlimited, no-cost, self-hosted havenbored for Discord. It allows you to play sounds in a voice channel.
 
 
 [Hexdocs](https://christomitov.github.io/soundbored/)
@@ -111,14 +111,14 @@ Current API workflow supports:
 
 #### List sounds
 ```bash
-curl https://soundboardurl.com/api/sounds \
+curl https://havenboredurl.com/api/sounds \
   -H "Authorization: Bearer <USER_API_TOKEN>"
 ```
 Returns `200 OK` with `%{data: [...]}`.
 
 #### Upload a local file
 ```bash
-curl -X POST https://soundboardurl.com/api/sounds \
+curl -X POST https://havenboredurl.com/api/sounds \
   -H "Authorization: Bearer <USER_API_TOKEN>" \
   -F "source_type=local" \
   -F "name=wow" \
@@ -130,7 +130,7 @@ Returns `201 Created` with `%{data: sound}`.
 
 #### Create a URL-backed sound
 ```bash
-curl -X POST https://soundboardurl.com/api/sounds \
+curl -X POST https://havenboredurl.com/api/sounds \
   -H "Authorization: Bearer <USER_API_TOKEN>" \
   -H "Content-Type: application/json" \
   -d '{"source_type":"url","name":"wow","url":"https://example.com/wow.mp3","tags":["meme","reaction"],"volume":90}'
@@ -139,14 +139,14 @@ Returns `201 Created` with `%{data: sound}`.
 
 #### Queue playback for a sound
 ```bash
-curl -X POST https://soundboardurl.com/api/sounds/123/play \
+curl -X POST https://havenboredurl.com/api/sounds/123/play \
   -H "Authorization: Bearer <USER_API_TOKEN>"
 ```
 Returns `202 Accepted` with `%{data: %{status: "accepted", ...}}` because playback is queued asynchronously.
 
 #### Stop active playback
 ```bash
-curl -X POST https://soundboardurl.com/api/sounds/stop \
+curl -X POST https://havenboredurl.com/api/sounds/stop \
   -H "Authorization: Bearer <USER_API_TOKEN>"
 ```
 Returns `202 Accepted` with `%{data: %{status: "accepted", ...}}` because the stop request is also asynchronous.
