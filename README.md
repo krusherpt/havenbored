@@ -27,7 +27,7 @@ Havenbored is an unlimited, no-cost, self-hosted soundboard for [Haven](https://
 
 2. Run the published container:
    ```bash
-   docker run -d -p 4000:4000 --env-file ./.env christom/soundbored
+   docker run -d -p 4000:4000 --env-file ./.env krusherpt/havenbored
    ```
 
 3. Visit http://localhost:4000, log in with your Haven credentials, and trigger your first sound.
@@ -65,13 +65,13 @@ All available keys live in `.env.example`. Configure the ones that match your se
 
 ## Deployment
 
-The application is published to Docker Hub as `christom/soundbored`.
+ The application is published to Docker Hub as `krusherpt/havenbored`.
 
 ### Simple Docker Host
 
 ```bash
-docker pull christom/soundbored:latest
-docker run -d -p 4000:4000 --env-file ./.env christom/soundbored
+ docker pull krusherpt/havenbored:latest
+ docker run -d -p 4000:4000 --env-file ./.env krusherpt/havenbored
 ```
 
 If you place the container behind your own reverse proxy, set `PHX_HOST` and `SCHEME` in `.env` to match the external URL and terminate TLS in your proxy. No additional compose files are required.
