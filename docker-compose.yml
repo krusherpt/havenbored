@@ -1,29 +1,29 @@
 services:
-  soundbored:
-    image: christom/soundbored:latest
+  havenbored:
+    image: krusherpt/havenbored:latest
     ports:
       - "127.0.0.1:4000:4000"
     env_file: .env
     volumes:
-      - soundbored_data:/app/priv/static/uploads
+      - havenbored_data:/app/priv/static/uploads
     # the below can be added for improved security
-      - type: tmpfs
-        target: /tmp/mix_pubsub
-        tmpfs:
-          mode: 0777
-    user: 9999:9999 # make sure this user has permissions on the soundbored_data volume
+    #   - type: tmpfs
+    #     target: /tmp/mix_pubsub
+    #     tmpfs:
+    #       mode: 0777
+    user: 9999:9999 # make sure this user has permissions on the havenbored_data volume
     read_only: true
     environment:
       TMPDIR: /tmp/mix_pubsub
-      SECRET_KEY_BASE_FILE: /run/secrets/soundbored_secret_key_base
+      SECRET_KEY_BASE_FILE: /run/secrets/havenbored_secret_key_base
     secrets:
-      - soundbored_secret_key_base
+      - havenbored_secret_key_base
 
 volumes:
-  soundbored_data:
+  havenbored_data:
 
 secrets:
-  soundbored_secret_key_base:
+  havenbored_secret_key_base:
     # this file should contain securely-generated random data (see README.md)
     # and only be readable by root or the user running the docker daemon
     file: ./secret_key_base.txt

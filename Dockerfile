@@ -20,22 +20,10 @@ RUN apk add --no-cache \
 WORKDIR /app
 COPY --exclude=entrypoint.sh . .
 
-# Install hex/rebar, get dependencies, and refresh EDA from latest main.
-RUN mkdir -p /app/.mix /app/.hex && \
-    mix local.hex --force && \
-    mix local.rebar --force && \
-    mix deps.get && \
-    mix deps.update eda
-
-RUN export SKIP_RUNTIME_CONFIG=1 && \
-    mix assets.setup && \
-    mix compile && \
-    mix assets.deploy && \
-    cd deps/eda/native/eda_dave && \
-    cargo build --release && \
-    mkdir -p /app/_build/${MIX_ENV}/lib/eda/priv/native && \
-    cp target/release/libeda_dave.so /app/_build/${MIX_ENV}/lib/eda/priv/native/eda_dave.so
-
+ # Install hex/rebar, get dependencies.
+ RUN mix deps.get --only $MIX_ENV
+ RUN mix compile
+ RUN mix release
 FROM elixir:1.19-alpine
 
 ENV MIX_ENV=prod \
